@@ -16,6 +16,7 @@ import CreditAmount from 'component/common/credit-amount';
 import Empty from 'component/common/empty';
 import I18nMessage from 'component/i18nMessage';
 import Icon from 'component/common/icon';
+import { punctuationMarks } from 'util/remark-lbry';
 import React from 'react';
 import SelectChannel from 'component/selectChannel';
 import type { ElementRef } from 'react';
@@ -29,6 +30,7 @@ let stripeEnvironment = getStripeEnvironment();
 const TAB_FIAT = 'TabFiat';
 const TAB_LBC = 'TabLBC';
 const MENTION_DEBOUNCE_MS = 100;
+const separators = [...punctuationMarks, ' '];
 
 type Props = {
   uri: string,
@@ -111,10 +113,15 @@ export function CommentCreate(props: Props) {
     commentValue.indexOf('@', selectionIndex) === selectionIndex
       ? commentValue.indexOf('@', selectionIndex)
       : commentValue.lastIndexOf('@', selectionIndex);
-  const mentionLengthIndex =
-    commentValue.indexOf(' ', selectedMentionIndex) >= 0
-      ? commentValue.indexOf(' ', selectedMentionIndex)
-      : commentValue.length;
+  let mentionLengthIndex = commentValue.length;
+  separators.map((separator) => {
+    if (
+      commentValue.indexOf(separator, selectedMentionIndex) >= 0 &&
+      commentValue.indexOf(separator, selectedMentionIndex) < mentionLengthIndex
+    ) {
+      mentionLengthIndex = commentValue.indexOf(separator, selectedMentionIndex);
+    }
+  });
   const channelMention =
     selectedMentionIndex >= 0 && selectionIndex <= mentionLengthIndex
       ? commentValue.substring(selectedMentionIndex, mentionLengthIndex)
@@ -182,7 +189,7 @@ export function CommentCreate(props: Props) {
     setCommentValue(
       commentValue.substring(0, selectedMentionIndex) +
         `${newMentionValue}` +
-        (commentValue.length > mentionLengthIndex + 1
+        (commentValue.length > mentionLengthIndex
           ? commentValue.substring(mentionLengthIndex, commentValue.length)
           : ' ')
     );
