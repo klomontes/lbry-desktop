@@ -23,7 +23,6 @@ type Props = {
   showDelayedMessage?: boolean,
   noLazyLoad?: boolean,
   hideStakedIndicator?: boolean,
-  xsmall?: boolean,
   noOptimization?: boolean,
   setThumbUploadError: (boolean) => void,
   ThumbUploadError: boolean,
