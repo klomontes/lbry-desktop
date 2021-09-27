@@ -174,3 +174,4 @@ export const BADGE_STREAMER = 'BadgeStreamer';
 export const REPLAY = 'Replay';
 export const REPEAT = 'Repeat';
 export const SHUFFLE = 'Shuffle';
+export const APPEAL = 'JudgeHammer';
