@@ -249,7 +249,7 @@ export default handleActions(
         claimId,
         uri,
         disabled,
-        commenterClaimId,
+        creatorClaimId,
       } = action.data;
 
       const commentById = Object.assign({}, state.commentById);
@@ -265,8 +265,8 @@ export default handleActions(
       const isLoadingByParentId = Object.assign({}, state.isLoadingByParentId);
       const settingsByChannelId = Object.assign({}, state.settingsByChannelId);
 
-      settingsByChannelId[commenterClaimId] = {
-        ...(settingsByChannelId[commenterClaimId] || {}),
+      settingsByChannelId[creatorClaimId] = {
+        ...(settingsByChannelId[creatorClaimId] || {}),
         comments_enabled: !disabled,
       };
 
