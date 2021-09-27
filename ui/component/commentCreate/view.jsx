@@ -84,6 +84,7 @@ export function CommentCreate(props: Props) {
     fetchComment,
   } = props;
   const formFieldRef: ElementRef<any> = React.useRef();
+  const formFieldInputRef = formFieldRef && formFieldRef.current && formFieldRef.current.input;
   const buttonRef: ElementRef<any> = React.useRef();
   const {
     push,
@@ -97,15 +98,26 @@ export function CommentCreate(props: Props) {
   const [isReviewingSupportComment, setIsReviewingSupportComment] = React.useState();
   const [tipAmount, setTipAmount] = React.useState(1);
   const [commentValue, setCommentValue] = React.useState('');
-  const [channelMention, setChannelMention] = React.useState('');
+  const [selectionIndex, setSelectionIndex] = React.useState(-1);
   const [advancedEditor, setAdvancedEditor] = usePersistedState('comment-editor-mode', false);
   const [activeTab, setActiveTab] = React.useState('');
   const [tipError, setTipError] = React.useState();
   const [deletedComment, setDeletedComment] = React.useState(false);
   const [shouldDisableReviewButton, setShouldDisableReviewButton] = React.useState();
 
-  const commentWords = commentValue ? commentValue && commentValue.split(' ') : [];
-  const lastCommentWord = commentWords && commentWords[commentWords.length - 1];
+  const selectedMentionIndex =
+    commentValue.indexOf('@', selectionIndex) === selectionIndex
+      ? commentValue.indexOf('@', selectionIndex)
+      : commentValue.lastIndexOf('@', selectionIndex);
+  const mentionLengthIndex =
+    commentValue.indexOf(' ', selectedMentionIndex) >= 0
+      ? commentValue.indexOf(' ', selectedMentionIndex)
+      : commentValue.length;
+  const channelMention =
+    selectedMentionIndex >= 0 && selectionIndex <= mentionLengthIndex
+      ? commentValue.substring(selectedMentionIndex, mentionLengthIndex)
+      : '';
+
   const claimId = claim && claim.claim_id;
   const signingChannel = (claim && claim.signing_channel) || claim;
   const channelUri = signingChannel && signingChannel.permanent_url;
@@ -159,16 +171,18 @@ export function CommentCreate(props: Props) {
   }
 
   function handleSelectMention(mentionValue) {
-    const newCommentValue = commentWords.slice(0, -1).join(' ');
-    let newMentionValue = mentionValue;
-    if (mentionValue.includes('#')) {
-      newMentionValue = mentionValue
-        .substring(0, mentionValue.indexOf('#') + 3)
-        .replace('lbry://', '')
-        .replace('#', ':');
+    let newMentionValue = mentionValue.replace('lbry://', '');
+    if (newMentionValue.includes('#')) {
+      newMentionValue = newMentionValue.substring(0, newMentionValue.indexOf('#') + 3).replace('#', ':');
     }
 
-    setCommentValue(newCommentValue + (commentWords.length > 1 ? ' ' : '') + `${newMentionValue} `);
+    setCommentValue(
+      commentValue.substring(0, selectedMentionIndex) +
+        `${newMentionValue}` +
+        (commentValue.length > mentionLengthIndex + 1
+          ? commentValue.substring(mentionLengthIndex, commentValue.length)
+          : ' ')
+    );
   }
 
   function altEnterListener(e: SyntheticKeyboardEvent<*>) {
@@ -178,12 +192,23 @@ export function CommentCreate(props: Props) {
     }
   }
 
+  function selectionListener(e: SyntheticKeyboardEvent<*>) {
+    if (formFieldInputRef && document.activeElement === formFieldInputRef.current) {
+      // $FlowFixMe
+      setSelectionIndex(e.target.selectionStart);
+    }
+  }
+
   function onTextareaFocus() {
     window.addEventListener('keydown', altEnterListener);
+    window.addEventListener('keydown', selectionListener);
+    window.addEventListener('keyup', selectionListener);
   }
 
   function onTextareaBlur() {
     window.removeEventListener('keydown', altEnterListener);
+    window.removeEventListener('keydown', selectionListener);
+    window.removeEventListener('keyup', selectionListener);
   }
 
   function handleSubmit() {
@@ -399,11 +424,6 @@ export function CommentCreate(props: Props) {
     }
   }, [fetchComment, shouldFetchComment, parentId]);
 
-  React.useEffect(() => {
-    const isMentioning = lastCommentWord && lastCommentWord.indexOf('@') === 0;
-    setChannelMention(isMentioning ? lastCommentWord : '');
-  }, [lastCommentWord]);
-
   // **************************************************************************
   // Render
   // **************************************************************************
@@ -494,7 +514,7 @@ export function CommentCreate(props: Props) {
         <ChannelMentionSuggestions
           uri={uri}
           isLivestream={livestream}
-          inputRef={formFieldRef && formFieldRef.current && formFieldRef.current.input}
+          inputRef={formFieldInputRef}
           mentionTerm={channelMention}
           creatorUri={channelUri}
           customSelectAction={handleSelectMention}
