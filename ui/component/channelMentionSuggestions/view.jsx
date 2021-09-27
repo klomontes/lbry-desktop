@@ -45,6 +45,7 @@ export default function ChannelMentionSuggestions(props: Props) {
   const comboboxInputRef: ElementRef<any> = React.useRef();
   const comboboxListRef: ElementRef<any> = React.useRef();
   const [debouncedTerm, setDebouncedTerm] = React.useState('');
+  const mainEl = document.querySelector('.channel-mention__suggestions');
 
   const isRefFocused = (ref) => ref && ref.current === document.activeElement;
 
@@ -168,6 +169,27 @@ export default function ChannelMentionSuggestions(props: Props) {
 
     if (urisToResolve.length > 0) doResolveUris(urisToResolve);
   }, [doResolveUris, hasMinLength, isTyping, possibleMatches, subscriptionUris, unresolvedSubscriptions]);
+
+  React.useEffect(() => {
+    if (!mainEl) return;
+    const header = document.querySelector('.header__navigation');
+
+    function handleReflow() {
+      const boxAtTopOfPage = header && mainEl.getBoundingClientRect().top <= header.offsetHeight;
+      const boxAtBottomOfPage = mainEl.getBoundingClientRect().bottom >= window.innerHeight;
+
+      if (boxAtTopOfPage) {
+        mainEl.setAttribute('flow-bottom', '');
+      }
+      if (mainEl.getAttribute('flow-bottom') !== null && boxAtBottomOfPage) {
+        mainEl.removeAttribute('flow-bottom');
+      }
+    }
+    handleReflow();
+
+    window.addEventListener('scroll', handleReflow);
+    return () => window.removeEventListener('scroll', handleReflow);
+  }, [mainEl]);
 
   const suggestionsRow = (label: string, suggestions: Array<string>, hasSuggestionsBelow: boolean) => {
     if (mentionTerm !== '@' && suggestions !== results) {
